@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <script src="/js/session.js" defer></script>
+    <script src="/js/common.js" defer></script>
+    <script src="/js/pokedex.js" defer></script>
+    <script src="/js/home.js" defer></script>
+  </head>
+  <body>
+    <a href="/logout" class="top-button" style="position: fixed; top: 10px; left: 10px; width: auto; display: inline-block;">
+      Log Out
+    </a>
+
+    <div class="container">
+      <h1>Welcome to TalentFlame, {{username}}!</h1>
+      <p>This is your game home page. Your adventure begins here!</p>
+    </div>
+
+    <!-- New "Your Pokedex" button placed directly above the existing Pokedex button -->
+    <div style="position: fixed; bottom: 180px; right: 20px;">
+      <button id="yourPokedexBtn" class="btn">Your Pokedex</button>
+    </div>
+    <div style="position: fixed; bottom: 120px; right: 20px;">
+      <button id="pokedex2Btn" class="btn">Pokedex</button>
+    </div>
+
+    <div class="team-section" style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: #fff; padding: 10px; display: flex; align-items: center;">
+      <div style="width: 10%; text-align: center; font-weight: bold;">
+        <div>Your</div>
+        <div>Team</div>
+      </div>
+      <div id="teamIcons" style="width: 90%; display: flex; justify-content: space-around;"></div>
+    </div>
+  </body>
+</html>

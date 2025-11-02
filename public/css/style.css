@@ -1,0 +1,94 @@
+/* Reset and basic styling */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "HK Grotesk", Arial, sans-serif;
+  background-color: #BDC9FF;
+}
+
+/* ---------- TalentFlame Starter Page ---------- */
+.starter-container {
+  width: 100%;
+  height: 100vh;
+  background: url('https://cdn.glitch.global/ee5dc49c-3edf-4191-a9cf-476069221959/Starter.png?v=1740805680832')
+    no-repeat center center;
+  background-size: cover;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-text {
+  font-size: 60px;
+  color: #000000;
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
+  margin-bottom: 30px;
+}
+
+.button-container {
+  display: flex;
+  gap: 20px;
+}
+
+.btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+  background-color: rgba(255, 255, 255, 1);
+}
+
+/* ---------- TalentFlame Home Page ---------- */
+.container {
+  min-height: 100vh;
+  width: 100%;
+  background: url('https://cdn.glitch.global/ee5dc49c-3edf-4191-a9cf-476069221959/HomeBackground.png?v=1740805705228')
+    no-repeat center top;
+  background-size: 100% auto;
+  padding-top: 50px;
+  text-align: center;
+}
+
+.top-button {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 5px 10px;
+  border-radius: 5px;
+  text-decoration: none;
+  color: #333333;
+  font-size: 14px;
+}
+
+/* ---------- Admin Page ---------- */
+.admin-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #BDC9FF;
+  text-align: center;
+}
+
+.admin-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  cursor: pointer;
+}

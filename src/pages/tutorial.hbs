@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <script src="/js/common.js" defer></script>
+    <!-- We still load pokedex2.js, but its internal endpoint URLs should now point to the new endpoints -->
+    <script src="/js/pokedex.js" defer></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        console.log("Tutorial page loaded. Starting to fetch starter data...");
+        // Use starter names for the tutorial.
+        const starterNames = ["Bulbasaur", "Charmander", "Squirtle"];
+        const container = document.getElementById("starter-container");
+
+        // Function to create a starter card.
+        function createCard(pokemon) {
+          console.log("Creating card for", pokemon.Name);
+          const card = document.createElement("div");
+          card.className = "starter-card";
+
+          const nameElem = document.createElement("h3");
+          nameElem.textContent = pokemon.Name;
+          card.appendChild(nameElem);
+
+          const img = document.createElement("img");
+          img.src = pokemon.Pic;
+          img.alt = pokemon.Name;
+          img.style.width = "100%";
+          // When clicking the image, use the same process as the Pokedex 2.0 button.
+          img.addEventListener("click", function() {
+            console.log("Starter image clicked for", pokemon.Name);
+            if (typeof fetchAndDisplayPokemonByName === "function") {
+              fetchAndDisplayPokemonByName(pokemon.Name);
+            } else {
+              console.warn("fetchAndDisplayPokemonByName function not loaded.");
+              alert("Display function not loaded.");
+            }
+          });
+          card.appendChild(img);
+
+          const chooseBtn = document.createElement("button");
+          chooseBtn.textContent = "Choose";
+          chooseBtn.className = "btn";
+          chooseBtn.addEventListener("click", function() {
+            console.log("Choose button clicked for", pokemon.Name);
+            const confirmed = confirm(`You have chosen ${pokemon.Name} as your starter Pokémon. Do you wish to continue?`);
+            if (confirmed) {
+              // Send the Pokémon's name as starterName.
+              const payload = { username: "{{username}}", starterName: pokemon.Name };
+              console.log("Payload for add_starter:", payload);
+              const params = new URLSearchParams();
+              params.append("username", "{{username}}");
+              params.append("starterName", pokemon.Name);
+              fetch("/api/user/add_starter", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: params
+              })
+              .then(res => {
+                console.log("Received response status:", res.status);
+                return res.json();
+              })
+              .then(result => {
+                console.log("Response from add_starter endpoint:", result);
+                if (result.success) {
+                  alert(`Starter ${pokemon.Name} added successfully!`);
+                  window.location.href = `/home?username={{username}}`;
+                } else {
+                  alert("Error: " + result.error);
+                }
+              })
+              .catch(error => {
+                console.error("Error in add_starter fetch:", error);
+                alert("An error occurred while adding your starter.");
+              });
+            } else {
+              console.log("Starter selection cancelled for", pokemon.Name);
+            }
+          });
+          card.appendChild(chooseBtn);
+
+          return card;
+        }
+
+        // For each starter name, fetch its details using the new endpoints.
+        Promise.all(
+          starterNames.map(name => {
+            console.log("Fetching stats for", name);
+            return fetch(`/api/pokemon/stats?name=${encodeURIComponent(name)}`)
+              .then(res => {
+                console.log("Stats endpoint response for", name, "status:", res.status);
+                return res.json();
+              })
+              .then(statsData => {
+                console.log("Stats data for", name, ":", statsData);
+                if (statsData.error) {
+                  throw new Error(`Error fetching stats for ${name}: ${statsData.error}`);
+                }
+                let stats;
+                // For tutorial, if multiple forms exist, pick the first.
+                if (Array.isArray(statsData.stats)) {
+                  stats = statsData.stats[0];
+                  console.log("Multiple forms detected for", name, "; selected first form:", stats);
+                } else {
+                  stats = statsData.stats;
+                }
+                const formQuery = stats.form ? `&form=${encodeURIComponent(stats.form)}` : "";
+                const baseQuery = `name=${encodeURIComponent(name)}${formQuery}`;
+                console.log("Base query for", name, ":", baseQuery);
+
+                // Fetch additional data in parallel.
+                return Promise.all([
+                  fetch(`/api/dimensions?${baseQuery}`).then(r => {
+                    console.log("Dimensions endpoint response for", name, "status:", r.status);
+                    return r.json();
+                  }),
+                  fetch(`/api/abilities?${baseQuery}`).then(r => {
+                    console.log("Abilities endpoint response for", name, "status:", r.status);
+                    return r.json();
+                  }),
+                  fetch(`/api/gender?${baseQuery}`).then(r => {
+                    console.log("Gender endpoint response for", name, "status:", r.status);
+                    return r.json();
+                  }),
+                  fetch(`/api/pic?${baseQuery}`).then(r => {
+                    console.log("Pic endpoint response for", name, "status:", r.status);
+                    return r.json();
+                  })
+                ]).then(([dimensionsData, abilitiesData, genderData, picData]) => {
+                  console.log("Dimensions data for", name, ":", dimensionsData);
+                  console.log("Abilities data for", name, ":", abilitiesData);
+                  console.log("Gender data for", name, ":", genderData);
+                  console.log("Picture data for", name, ":", picData);
+
+                  // Assemble the final Pokémon object.
+                  const pokemon = {};
+                  pokemon._id = stats.id;
+                  pokemon.Name = stats.name;
+                  pokemon.Type = stats.type
+                    ? (Array.isArray(stats.type)
+                        ? stats.type.filter(t => t && t.trim() !== "").join(", ")
+                        : stats.type)
+                    : "";
+                  // For backward compatibility, if gender data exists, set a field "Gender Ratio".
+                  if (genderData.gender && genderData.gender.genderRatio) {
+                    pokemon["Gender Ratio"] = `${genderData.gender.genderRatio.male}-${genderData.gender.genderRatio.female}`;
+                  } else {
+                    pokemon["Gender Ratio"] = "Unknown";
+                  }
+                  // Use the new abilities fields.
+                  pokemon.Ability1 = abilitiesData.abilities ? abilitiesData.abilities.ability1 || "N/A" : "N/A";
+                  pokemon.Ability2 = abilitiesData.abilities ? abilitiesData.abilities.ability2 || "" : "";
+                  pokemon.HiddenAbility = abilitiesData.abilities ? abilitiesData.abilities.hidden || "" : "";
+                  pokemon.Pic = (picData.pic && picData.pic.picUrl) ? picData.pic.picUrl : "";
+                  if (dimensionsData.dimensions) {
+                    pokemon.Height = `${dimensionsData.dimensions.heightM} m (${dimensionsData.dimensions.heightFt})`;
+                    let weightLbs = String(dimensionsData.dimensions.weightLbs).replace(/lbs/gi, "").trim();
+                    pokemon.Weight = `${dimensionsData.dimensions.weightKgs} kg (${weightLbs} lbs)`;
+                  } else {Whic
+                    pokemon.Height = "";
+                    pokemon.Weight = "";
+                  }
+                  pokemon.Total = stats.Total;
+                  pokemon.HP = stats.HP;
+                  pokemon.Attack = stats.Attack;
+                  pokemon.Defense = stats.Defense;
+                  pokemon.SpAtk = stats.SpAtk;
+                  pokemon.SpDef = stats.SpDef;
+                  pokemon.Speed = stats.Speed;
+                  pokemon.Info = "Sorry, this line is currently unavailable";
+
+                  console.log("Final Pokémon object for", name, ":", pokemon);
+                  return pokemon;
+                });
+              });
+          })
+        )
+        .then(pokemonArray => {
+          console.log("All starter data fetched:", pokemonArray);
+          // Append each starter card to the container.
+          pokemonArray.forEach(pokemon => {
+            const card = createCard(pokemon);
+            container.appendChild(card);
+          });
+        })
+        .catch(error => console.error("Error in tutorial starter process:", error));
+      });
+    </script>
+    <style>
+      #starter-container {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 50px;
+      }
+      .starter-card {
+        width: 200px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        padding: 10px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 id="starter-header">Choose your starter Pokémon</h1>
+      <p style="font-size: 0.9em; margin-top: 10px; color: #fff; 
+          background-color: rgba(0, 0, 0, 0.2); 
+          padding: 3px 5px; 
+          border-radius: 3px;
+          text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">
+  Sorry for your inconvenience. Due to foreseeable tremendous popularity with the choice of Pikachu as a starter that will destruct balance of the game, and for your benefit of starting the game, since the first gym contains ground type pokémons, Pikachu will be added as a reward upon defeating Lt. Surge in third gym, and the choice of choosing Pikachu as a starter is omitted.
+</p>
+      <div id="starter-container"></div>
+    </div>
+  </body>
+</html>
